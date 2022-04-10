@@ -39,7 +39,8 @@ namespace SharpAzToken
             var formContent = new FormUrlEncodedContent(new[]
                 {
                 new KeyValuePair<string, string>("grant_type", "urn:ietf:params:oauth:grant-type:jwt-bearer"),
-                new KeyValuePair<string, string>("request", JWT)
+                new KeyValuePair<string, string>("request", JWT),
+                new KeyValuePair<string, string>("windows_api_version", "1.0")
                 });
                 return Helper.PostToTokenEndpoint(formContent, proxy, tenant);
         }

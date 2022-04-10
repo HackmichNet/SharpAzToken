@@ -9,6 +9,11 @@ namespace SharpAzToken
 {
     class Utils
     {
+        public static String GetTenantIdToUPN(String UPN, String Proxy)
+        {
+            String domain = UPN.Split("@")[1];
+            return GetTenantIdToDomain(domain,Proxy);
+        }
         public static String GetTenantIdToDomain(string Domain, String Proxy)
         {
             String result = null;

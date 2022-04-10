@@ -17,14 +17,11 @@ namespace SharpAzToken
     {
         public static string getCodeFromPRTCookie(string cookie, string proxy, string resourceID, string clientID)
         {
-            //String uri = string.Format(@"/common/oauth2/authorize?client_id={0}&redirect_uri={1}&response_type=code&scope=openid profile",
-            //    clientID,
-            //    resourceID
-            // );
-
-            String uri = string.Format(@"/common/oauth2/authorize?client_id={0}&response_type=code&scope=openid profile",
-                "0000000c-0000-0000-c000-000000000000"
+            String uri = string.Format(@"/common/oauth2/authorize?client_id={0}&resource={1}&response_type=code&&redirect_uri=urn:ietf:wg:oauth:2.0:oob",
+                clientID,
+                resourceID
              );
+
             HttpClient client = getDefaultClient(proxy);
             using (client)
             {

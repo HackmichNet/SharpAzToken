@@ -87,7 +87,7 @@ namespace SharpAzToken
         [Option(HelpText = "Use DerivedKey (from Mimikatz)")]
         public string DerivedKey { get; set; }
 
-        [Option(HelpText = "Use Context (from Mimikatz")]
+        [Option(HelpText = "Use Context (from Mimikatz)")]
         public string Context { get; set; }
 
         [Option(HelpText = "Use Session Key")]
@@ -115,7 +115,7 @@ namespace SharpAzToken
         [Option(HelpText = "Use Refreshtoken")]
         public string RefreshToken { get; set; }
 
-        [Option(HelpText = "Use PRTCookie - does currently not work.")]
+        [Option(HelpText = "Use PRTCookie")]
         public string PrtCookie { get; set; }
 
         [Option(HelpText = "Set ClientID (ApplicationID), for example GraphAPI (1b730954-1685-4b74-9bfd-dac224a7b894)", Default = "1b730954-1685-4b74-9bfd-dac224a7b894")]
