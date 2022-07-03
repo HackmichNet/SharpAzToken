@@ -32,8 +32,7 @@ Tipp: Disable HTTP2 support on your proxy. The library I use does not support HT
 ### Help
 
 ```
-SharpAzToken.exe --help
-
+.\SharpAzToken.exe --help
   _________.__                           _____         ___________     __
  /   _____/|  |__ _____ _____________   /  _  \ _______\__    ___/___ |  | __ ____   ____
  \_____  \ |  |  \\__  \\_  __ \____ \ /  /_\  \\___   / |    | /  _ \|  |/ // __ \ /    \
@@ -41,18 +40,20 @@ SharpAzToken.exe --help
 /_______  /|___|  (____  /__|  |   __/\____|__  /_____ \ |____| \____/|__|_ \\___  >___|  /
         \/      \/     \/      |__|           \/      \/                   \/    \/     \/
 
-SharpAzToken 0.0.2
+SharpAzToken 0.0.3
 
   p2pcert       Ask for a P2P Certificate.
   nonce         Request a nonce from Azure.
   cookie        Create a PRT Cookie for further usage or your browser.
-  token         Play with Azure Tokens.
+  token         Play with Azure tokens using "/oauth2/token" endpoint.
+  tokenv2       Play with Azure tokens using "/oauth2/v2.0/token" endpoint.
   mdm           Do things with Intune like joining a device
   devicekeys    Play with Device Keys - Get a PRT and a SessionKey for a
                 certificate.
   utils         Some arbitrary usefull functions.
   help          Display more information on a specific command.
   version       Display version information.
+
 
 ```
 
@@ -112,15 +113,23 @@ SharpAzToken.exe cookie --help
 Create tokens in various combination and play with them:
 
 ```cmd
-SharpAzToken.exe token --help
+.\SharpAzToken.exe token --help
+  _________.__                           _____         ___________     __
+ /   _____/|  |__ _____ _____________   /  _  \ _______\__    ___/___ |  | __ ____   ____
+ \_____  \ |  |  \\__  \\_  __ \____ \ /  /_\  \\___   / |    | /  _ \|  |/ // __ \ /    \
+ /        \|   Y  \/ __ \|  | \/  |_> >    |    \/    /  |    |(  <_> )    <\  ___/|   |  \
+/_______  /|___|  (____  /__|  |   __/\____|__  /_____ \ |____| \____/|__|_ \\___  >___|  /
+        \/      \/     \/      |__|           \/      \/                   \/    \/     \/
 
- --prt             Use PRT
+SharpAzToken 0.0.3
+
+  --prt             Use PRT
   --sessionkey      Use Session Key
   --devicecode      (Default: false) Use DeviceCode authentication
   --derivedkey      Use DerivedKey
   --context         Use Context
   --refreshtoken    Use Refreshtoken
-  --prtcookie       Use PRTCookie - does currently not work.
+  --prtcookie       Use PRTCookie
   --clientid        (Default: 1b730954-1685-4b74-9bfd-dac224a7b894) Set ClientID
                     (ApplicationID), for example GraphAPI
                     (1b730954-1685-4b74-9bfd-dac224a7b894)
@@ -136,8 +145,47 @@ SharpAzToken.exe token --help
                     Intune, Windows, ComplianceCenter, SharepointOnline or
                     ExchangeOnlineV2. Or you can set custom values with
                     --clientid and --resourceid
-  --scope           Set a custom scope
-  --useoauthv2      (Default: false) Use "/oauth2/v2.0/token" endpoint
+  --proxy           Set Proxy
+  --help            Display this help screen.
+  --version         Display version information.
+```
+
+### Tokenv2
+
+Create a token using "/oauth2/v2.0/token" endpoint.
+
+```cmd
+.\SharpAzToken.exe tokenv2 --help
+
+
+  _________.__                           _____         ___________     __
+ /   _____/|  |__ _____ _____________   /  _  \ _______\__    ___/___ |  | __ ____   ____
+ \_____  \ |  |  \\__  \\_  __ \____ \ /  /_\  \\___   / |    | /  _ \|  |/ // __ \ /    \
+ /        \|   Y  \/ __ \|  | \/  |_> >    |    \/    /  |    |(  <_> )    <\  ___/|   |  \
+/_______  /|___|  (____  /__|  |   __/\____|__  /_____ \ |____| \____/|__|_ \\___  >___|  /
+        \/      \/     \/      |__|           \/      \/                   \/    \/     \/
+
+SharpAzToken 0.0.3
+
+  --prt             Use PRT
+  --sessionkey      Use Session Key
+  --devicecode      (Default: false) Use DeviceCode authentication
+  --derivedkey      Use DerivedKey
+  --prtcookie       Use PRTCookie
+  --context         Use Context
+  --refreshtoken    Use Refreshtoken
+  --clientid        (Default: 1b730954-1685-4b74-9bfd-dac224a7b894) Set ClientID
+                    (ApplicationID), for example GraphAPI
+                    (1b730954-1685-4b74-9bfd-dac224a7b894)
+  --clientsecret    Use Client Secret
+  --tenant          Specify Tenant
+  --username        Use username
+  --password        Use password
+  --clientname      Set a client used for token request, you can choose between:
+                    Outlook, Substrate, Teams, Graph, MSGraph, Core, Office,
+                    Intune, Windows, ComplianceCenter or ExchangeOnlineV2. Or
+                    you can set custom values with --clientid and --scope
+  --scope           (Default: .default offline_access) Set a custom scope
   --proxy           Set Proxy
   --help            Display this help screen.
   --version         Display version information.
@@ -150,7 +198,7 @@ Join a device or mark a device as compliant.
 ```cmd
 SharpAzToken.exe mdm --help
 
- --joindevice        (Default: false) Join a device, then you need to set at
+  --joindevice        (Default: false) Join a device, then you need to set at
                       least a devicename (--devicename)
   --markcompliant     (Default: false) Mark a device as compliant, then you need
                       to set at least the deviceid (--objectid)

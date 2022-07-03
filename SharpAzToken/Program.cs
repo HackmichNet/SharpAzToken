@@ -38,7 +38,7 @@ namespace SharpAzToken
         {
             Console.WriteLine(HelpText.AutoBuild(parserResult, h => {
                 h.AdditionalNewLineAfterOption = false;
-                h.Heading = "SharpAzToken 0.0.2"; //change header
+                h.Heading = "SharpAzToken 0.0.3"; //change header
                 h.Copyright = ""; //change copyright text
                 return h;
             }));
