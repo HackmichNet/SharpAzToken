@@ -300,7 +300,7 @@ namespace SharpAzToken
             }
             else if (opts.RefreshToken != null & opts.ResourceID != null)
             {
-                result = GetTokenFromRefreshTokenV1(opts.RefreshToken, opts.Proxy, opts.ResourceID, opts.ClientID, opts.Tenant);
+                result = GetTokenFromRefreshTokenV1(opts.RefreshToken, opts.Tenant, opts.Proxy, opts.ClientID, opts.ResourceID);
             }
             else if (opts.UserName != null & opts.Password != null)
             {
