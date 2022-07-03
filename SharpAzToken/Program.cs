@@ -48,14 +48,15 @@ namespace SharpAzToken
         static int Main(string[] args)
         {
             PrintBanner();
-            var parserResult = new Parser(c => c.HelpWriter = null).ParseArguments<P2POptions, NonceOptions, CookieOptions, TokenOptions, DeviceOptions, DeviceKeyOptions, UtilsOptions>(args);
+            var parserResult = new Parser(c => c.HelpWriter = null).ParseArguments<P2POptions, NonceOptions, CookieOptions, TokenOptionsV1, TokenOptionsV2, DeviceOptions, DeviceKeyOptions, UtilsOptions>(args);
             return parserResult.MapResult(
                     (P2POptions options) => RunP2PAction(options),
                     (DeviceKeyOptions options) => RunDeviceKeys(options),
                     (DeviceOptions options) => RunDevice(options),
                     (NonceOptions options) => RunNonce(options),
                     (CookieOptions options) => RunCookie(options),
-                    (TokenOptions options) => RunToken(options),
+                    (TokenOptionsV1 options) => RunTokenV1(options),
+                    (TokenOptionsV2 options) => RunTokenV2(options),
                     (UtilsOptions options) => RunUtils(options),
                     errs => DisplayHelp(parserResult)
             );
@@ -221,7 +222,7 @@ namespace SharpAzToken
             var decoder = new JwtDecoder(serializer, urlEncoder);
             if (opts.RefreshToken != null)
             {
-                string initToken = Tokenator.GetTokenFromRefreshToken(opts.RefreshToken, opts.Tenant, opts.Proxy, AzClientIDEnum.AzureMDM, AzResourceEnum.AzureMDM, false);
+                string initToken = Tokenator.GetTokenFromRefreshTokenV1(opts.RefreshToken, opts.Tenant, opts.Proxy, AzClientIDEnum.AzureMDM, AzResourceEnum.AzureMDM);
                 string checkAccessToken = JToken.Parse(initToken)["access_token"].ToString();
                 string decodedaccesstoken = decoder.Decode(checkAccessToken);
                 JToken parsedAccessToken = JToken.Parse(decodedaccesstoken);
@@ -236,7 +237,7 @@ namespace SharpAzToken
             }
             else if (opts.UserName != null && opts.Password != null)
             {
-                String initTokens = Tokenator.GetTokenFromUsernameAndPassword(opts.UserName, opts.Password, opts.Tenant, opts.Proxy, AzClientIDEnum.AzureMDM, AzResourceEnum.AzureMDM, false);
+                String initTokens = Tokenator.GetTokenFromUsernameAndPasswordV1(opts.UserName, opts.Password, opts.Tenant, opts.Proxy, AzClientIDEnum.AzureMDM, AzResourceEnum.AzureMDM);
                 if (initTokens == null)
                 {
                     Console.WriteLine("[-] Authentication failed. Please check used credentials!");
@@ -377,7 +378,7 @@ namespace SharpAzToken
                     }
                     else
                     {
-                        String token = Tokenator.GetTokenFromUsernameAndPassword(opts.UserName, opts.Password, opts.Tenant, opts.Proxy, AzClientIDEnum.GraphAPI, AzResourceEnum.WindowsClient, false);
+                        String token = Tokenator.GetTokenFromUsernameAndPasswordV1(opts.UserName, opts.Password, opts.Tenant, opts.Proxy, AzClientIDEnum.GraphAPI, AzResourceEnum.WindowsClient);
                         if (token == null)
                         {
                             Console.WriteLine("[-] Authentication failed! ");
@@ -538,7 +539,7 @@ namespace SharpAzToken
             return 1;
         }
 
-        static int RunToken(TokenOptions opts)
+        static int RunTokenV1(TokenOptionsV1 opts)
         {
 
             if (opts.ClientName != null)
@@ -546,64 +547,51 @@ namespace SharpAzToken
                 switch (opts.ClientName)
                 {
                     case "Outlook":
-                        opts.ClientID = AzClientIDEnum.Outlook;
+                        opts.ClientID = AzClientIDEnum.MicrosoftOffice;
                         opts.ResourceID = AzResourceEnum.Outlook;
-                        opts.UseOAuthV2 = false;
                         break;
                     case "Substrate":
                         opts.ClientID = AzClientIDEnum.Substrate;
                         opts.ResourceID = AzResourceEnum.Substrate;
-                        opts.UseOAuthV2 = false;
                         break;
                     case "Teams":
                         opts.ClientID = AzClientIDEnum.Teams;
                         opts.ResourceID = AzResourceEnum.Teams;
-                        opts.UseOAuthV2 = false;
                         break;
                     case "Graph":
                         opts.ClientID = AzClientIDEnum.GraphAPI;
                         opts.ResourceID = AzResourceEnum.GraphAPI;
-                        opts.UseOAuthV2 = false;
                         break;
                     case "MSGraph":
                         opts.ClientID = AzClientIDEnum.MSGraph;
                         opts.ResourceID = AzResourceEnum.MSGraph;
-                        opts.UseOAuthV2 = false;
                         break;
                     case "Core":
                         opts.ClientID = AzClientIDEnum.Core;
                         opts.ResourceID = AzResourceEnum.Core;
-                        opts.UseOAuthV2 = false;
                         break;
                     case "Office":
                         opts.ClientID = AzClientIDEnum.OfficeApps;
                         opts.ResourceID = AzResourceEnum.OfficeApps;
-                        opts.UseOAuthV2 = false;
                         break;
                     case "Intune":
                         opts.ClientID = AzClientIDEnum.Intune;
                         opts.ResourceID = AzResourceEnum.Intune;
-                        opts.UseOAuthV2 = false;
                         break;
                     case "Windows":
                         opts.ClientID = AzClientIDEnum.WindowsClient;
                         opts.ResourceID = AzResourceEnum.WindowsClient;
-                        opts.UseOAuthV2 = false;
                         break;
                     case "AzureMDM":
                         opts.ClientID = AzClientIDEnum.AzureMDM;
                         opts.ResourceID = AzResourceEnum.AzureMDM;
-                        opts.UseOAuthV2 = false;
                         break;
                     case "ComplianceCenter":
                         opts.ClientID = AzClientIDEnum.ExchangeOnlinePowerShell;
-                        opts.Scope = AzScopes.ComplianceCenter;
-                        opts.UseOAuthV2 = true;
+                        opts.ResourceID = AzResourceEnum.Core;
                         break;
                     case "ExchangeOnlineV2":
                         opts.ClientID = AzClientIDEnum.ExchangeOnlinePowerShell;
-                        opts.Scope = AzScopes.ExchangeOnlineV2;
-                        opts.UseOAuthV2 = true;
                         break;
                     case "SharepointOnline":
                         break;
@@ -625,7 +613,7 @@ namespace SharpAzToken
                 }
             }
 
-            String result = Tokenator.getToken(opts);
+            String result = Tokenator.getTokenV1(opts);
             if (result != null)
             {
                 var serializer = new JsonNetSerializer();
@@ -660,5 +648,102 @@ namespace SharpAzToken
             }
             return 1;
         }
+
+        static int RunTokenV2(TokenOptionsV2 opts)
+        {
+
+            if (opts.ClientName != null)
+            {
+                switch (opts.ClientName)
+                {
+                    case "Outlook":
+                        opts.ClientID = AzClientIDEnum.MicrosoftOffice;
+                        opts.Scope = AzScopes.Default;
+                        break;
+                    case "Substrate":
+                        opts.ClientID = AzClientIDEnum.Substrate;
+                        opts.Scope = AzScopes.Default;
+                        break;
+                    case "Teams":
+                        opts.ClientID = AzClientIDEnum.Teams;
+                        opts.Scope = AzScopes.Default;
+                        break;
+                    case "Graph":
+                        opts.ClientID = AzClientIDEnum.GraphAPI;
+                        opts.Scope = AzScopes.Default;
+                        break;
+                    case "MSGraph":
+                        opts.ClientID = AzClientIDEnum.MSGraph;
+                        opts.Scope = AzScopes.Default;
+                        break;
+                    case "Core":
+                        opts.ClientID = AzClientIDEnum.Core;
+                        opts.Scope = AzScopes.Default;
+                        break;
+                    case "Office":
+                        opts.ClientID = AzClientIDEnum.OfficeApps;
+                        opts.Scope = AzScopes.Default;
+                        break;
+                    case "Intune":
+                        opts.ClientID = AzClientIDEnum.Intune;
+                        opts.Scope = AzScopes.Default;
+                        break;
+                    case "Windows":
+                        opts.ClientID = AzClientIDEnum.WindowsClient;
+                        opts.Scope = AzScopes.Default;
+                        break;
+                    case "AzureMDM":
+                        opts.ClientID = AzClientIDEnum.AzureMDM;
+                        opts.Scope = AzScopes.Default;
+                        break;
+                    case "ComplianceCenter":
+                        opts.ClientID = AzClientIDEnum.ExchangeOnlinePowerShell;
+                        opts.Scope = AzScopes.ComplianceCenter;
+                        break;
+                    case "ExchangeOnlineV2":
+                        opts.ClientID = AzClientIDEnum.ExchangeOnlinePowerShell;
+                        break;
+                    default:
+                        Console.WriteLine("[-] Please choose Outlook, Substrate, Teams, Graph, MSGraph, Webshell, Core, Office, Intune, AzureMDM or WinClient");
+                        return 1;
+                }
+            }
+
+            String result = Tokenator.getTokenV2(opts);
+            if (result != null)
+            {
+                var serializer = new JsonNetSerializer();
+                var urlEncoder = new JwtBase64UrlEncoder();
+                var decoder = new JwtDecoder(serializer, urlEncoder);
+                JToken parsedJson = JToken.Parse(result);
+
+                if (parsedJson["error"] != null)
+                {
+                    Console.WriteLine("[-] Something went wrong!");
+                    Console.WriteLine("");
+
+                    Console.WriteLine(parsedJson["error_description"].ToString());
+                    Console.WriteLine("");
+                    return 1;
+                }
+
+                if (parsedJson["id_token"] != null)
+                {
+                    var id_token = decoder.Decode(parsedJson["id_token"].ToString());
+                    var parsedIDToken = JToken.Parse(id_token);
+                    parsedJson["id_token"] = parsedIDToken;
+                }
+
+                Console.WriteLine("[+] Here is your token:");
+                Console.WriteLine("");
+                var beautified = parsedJson.ToString(Formatting.Indented);
+                Console.WriteLine(beautified);
+                Console.WriteLine("");
+
+                return 0;
+            }
+            return 1;
+        }
+
     }
 }

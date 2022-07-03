@@ -94,8 +94,8 @@ namespace SharpAzToken
         public string SessionKey { get; set; }
     }
 
-    [Verb("token", HelpText = "Play with Azure Tokens.")]
-    class TokenOptions : DefaultOptions
+    [Verb("token", HelpText = "Play with Azure tokens using \"/oauth2/token\" endpoint.")]
+    class TokenOptionsV1 : DefaultOptions
     {
         [Option(HelpText = "Use PRT")]
         public string PRT { get; set; }
@@ -138,13 +138,51 @@ namespace SharpAzToken
 
         [Option(HelpText = "Set a client used for token request, you can choose between: Outlook, Substrate, Teams, Graph, MSGraph, Core, Office, Intune, Windows, ComplianceCenter, SharepointOnline or ExchangeOnlineV2. Or you can set custom values with --clientid and --resourceid")]
         public string ClientName { get; set; }
+    }
 
-        [Option(HelpText = "Set a custom scope")]
+    [Verb("tokenv2", HelpText = "Play with Azure tokens using \"/oauth2/v2.0/token\" endpoint.")]
+    class TokenOptionsV2 : DefaultOptions
+    {
+        [Option(HelpText = "Use PRT")]
+        public string PRT { get; set; }
+
+        [Option(HelpText = "Use Session Key")]
+        public string SessionKey { get; set; }
+
+        [Option(HelpText = "Use DeviceCode authentication", Default = false)]
+        public bool Devicecode { get; set; }
+
+        [Option(HelpText = "Use DerivedKey")]
+        public string DerivedKey { get; set; }
+        [Option(HelpText = "Use PRTCookie")]
+        public string PrtCookie { get; set; }
+
+        [Option(HelpText = "Use Context")]
+        public string Context { get; set; }
+
+        [Option(HelpText = "Use Refreshtoken")]
+        public string RefreshToken { get; set; }
+
+        [Option(HelpText = "Set ClientID (ApplicationID), for example GraphAPI (1b730954-1685-4b74-9bfd-dac224a7b894)", Default = "1b730954-1685-4b74-9bfd-dac224a7b894")]
+        public string ClientID { get; set; }
+
+        [Option(HelpText = "Use Client Secret")]
+        public string ClientSecret { get; set; }
+
+        [Option(HelpText = "Specify Tenant")]
+        public string Tenant { get; set; }
+
+        [Option(HelpText = "Use username")]
+        public string UserName { get; set; }
+
+        [Option(HelpText = "Use password")]
+        public string Password { get; set; }
+
+        [Option(HelpText = "Set a client used for token request, you can choose between: Outlook, Substrate, Teams, Graph, MSGraph, Core, Office, Intune, Windows, ComplianceCenter, SharepointOnline or ExchangeOnlineV2. Or you can set custom values with --clientid and --resourceid")]
+        public string ClientName { get; set; }
+
+        [Option(HelpText = "Set a custom scope", Default = ".default offline_access")]
         public string Scope { get; set; }
-        
-        [Option(HelpText = "Use \"/oauth2/v2.0/token\" endpoint", Default = false)]
-        public bool UseOAuthV2 { get; set; }
-
     }
 
     [Verb("mdm", HelpText = "Do things with Intune like joining a device")]

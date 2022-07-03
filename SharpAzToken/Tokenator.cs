@@ -11,7 +11,7 @@ namespace SharpAzToken
     class Tokenator
     {
 
-        public static string RequestForPendingAuthentication(string code, string clientID,  string proxy)
+        public static string RequestForPendingAuthentication(string code, string clientID,  string proxy, bool useOAuthV2)
         {
             var formContent = new FormUrlEncodedContent(new[]
                 {
@@ -19,19 +19,37 @@ namespace SharpAzToken
                 new KeyValuePair<string, string>("grant_type","urn:ietf:params:oauth:grant-type:device_code"),
                 new KeyValuePair<string, string>("client_id", clientID)
                 });
-
-            return Helper.PostToTokenEndpoint(formContent, proxy);
+            if (useOAuthV2)
+            {
+                return Helper.PostToTokenV2Endpoint(formContent, proxy);
+            }
+            else
+            {
+                return Helper.PostToTokenEndpoint(formContent, proxy);
+            }
 
         }
 
-        public static string RequestDeviceCode(string clientid, string resourceid, string proxy)
+        public static string RequestDeviceCode(string clientid, string payload, string proxy, bool useOAuthV2)
         {
-            var formContent = new FormUrlEncodedContent(new[]
+            if (useOAuthV2)
+            {
+                var formContent = new FormUrlEncodedContent(new[]
                 {
-                new KeyValuePair<string, string>("client_id", clientid),
-                new KeyValuePair<string, string>("resource", resourceid)
+                    new KeyValuePair<string, string>("client_id", clientid),
+                    new KeyValuePair<string, string>("scope", payload)
                 });
-            return Helper.PostToDeviceCodeEndpoint(formContent, proxy);
+                return Helper.PostToDeviceCodeEndpoint(formContent, proxy, useOAuthV2);
+            }
+            else
+            {
+                var formContent = new FormUrlEncodedContent(new[]
+                {
+                    new KeyValuePair<string, string>("client_id", clientid),
+                    new KeyValuePair<string, string>("resource", payload)
+                });
+                return Helper.PostToDeviceCodeEndpoint(formContent, proxy, useOAuthV2);
+            }
         }
 
         public static string RequestP2PCertificate(string JWT, string tenant, string proxy)
@@ -45,26 +63,33 @@ namespace SharpAzToken
                 return Helper.PostToTokenEndpoint(formContent, proxy, tenant);
         }
 
-        public static string GetTokenWithClientIDAndSecret(string clientID, string clientSecret, string tenant, string proxy, string ressourceId, bool UseOAuthV2)
+        public static string GetTokenWithClientIDAndSecret(string clientID, string clientSecret, string tenant, string proxy, string payload, bool UseOAuthV2)
         {
-            var formContent = new FormUrlEncodedContent(new[]
+            if (UseOAuthV2)
+            {
+                var formContent = new FormUrlEncodedContent(new[]
                 {
                 new KeyValuePair<string, string>("grant_type", "client_credentials"),
                 new KeyValuePair<string, string>("client_id", clientID),
-                new KeyValuePair<string, string>(ressourceId, ressourceId),
+                new KeyValuePair<string, string>("scope", payload),
                 new KeyValuePair<string, string>("client_secret", clientSecret)
                 });
-            if (UseOAuthV2)
-            {
                 return Helper.PostToTokenV2Endpoint(formContent, proxy, tenant);
             }
             else
             {
+                var formContent = new FormUrlEncodedContent(new[]
+                {
+                new KeyValuePair<string, string>("grant_type", "client_credentials"),
+                new KeyValuePair<string, string>("client_id", clientID),
+                new KeyValuePair<string, string>("resource", payload),
+                new KeyValuePair<string, string>("client_secret", clientSecret)
+                });
                 return Helper.PostToTokenEndpoint(formContent, proxy, tenant);
             }
         }
 
-        public static string GetTokenFromUsernameAndPassword(string username, string password, string tenant, string proxy, string clientID, string ressourceId, bool UseOAuthV2)
+        public static string GetTokenFromUsernameAndPasswordV1(string username, string password, string tenant, string proxy, string clientID, string ressourceId)
         {
             var formContent = new FormUrlEncodedContent(new[]
                 {
@@ -75,70 +100,10 @@ namespace SharpAzToken
                 new KeyValuePair<string, string>("username", username),
                 new KeyValuePair<string, string>("password", password)
                 });
-            if (UseOAuthV2)
-            {
-                return Helper.PostToTokenV2Endpoint(formContent, proxy, tenant);
-            }
-            else
-            {
-                return Helper.PostToTokenEndpoint(formContent, proxy, tenant);
-            }
+            return Helper.PostToTokenEndpoint(formContent, proxy, tenant);
         }
 
-        public static string GetTokenFromRefreshToken(string refreshToken, string tenant, string proxy, string clientID, string ressourceId, bool UseOAuthV2)
-        {
-            var formContent = new FormUrlEncodedContent(new[]
-                {
-                new KeyValuePair<string, string>("scope", "openid"),
-                new KeyValuePair<string, string>("grant_type", "refresh_token"),
-                new KeyValuePair<string, string>("resource", ressourceId),
-                new KeyValuePair<string, string>("client_id", clientID),
-                new KeyValuePair<string, string>("refresh_token", refreshToken)
-                });
-            if (UseOAuthV2)
-            {
-                return Helper.PostToTokenV2Endpoint(formContent, proxy, tenant);
-            }
-            else
-            {
-                return Helper.PostToTokenEndpoint(formContent, proxy, tenant);
-            }
-        }
-        public static string GetTokenWithCode(string code, string tenant, string proxy, string clientID, string ressourceId)
-        {
-            var formContent = new FormUrlEncodedContent(new[]
-                {
-                new KeyValuePair<string, string>("grant_type", "authorization_code"),
-                new KeyValuePair<string, string>("resource", ressourceId),
-                new KeyValuePair<string, string>("client_id", clientID),
-                new KeyValuePair<string, string>("redirect_uri", "urn:ietf:wg:oauth:2.0:oob"),
-                new KeyValuePair<string, string>("code", code)
-                });
-                return Helper.PostToTokenEndpoint(formContent, proxy, tenant);
-        }
-
-        public static string GetTokenWithRefreshTokenAndScope(string refreshToken, string proxy, string scope, string clientId, string tenant, bool UseOAuthV2)
-        {
-            var formContent = new FormUrlEncodedContent(new[]
-                {
-                new KeyValuePair<string, string>("grant_type", "refresh_token"),
-                new KeyValuePair<string, string>("scope", scope),
-                new KeyValuePair<string, string>("client_id", clientId),
-                new KeyValuePair<string, string>("claims", "{\"access_token\":{\"xms_cc\":{\"values\":[\"cp1\"]}}}"),
-                new KeyValuePair<string, string>("refresh_token", refreshToken)
-                });
-
-            if (UseOAuthV2)
-            {
-                return Helper.PostToTokenV2Endpoint(formContent, proxy, tenant);
-            }
-            else
-            {
-                return Helper.PostToTokenEndpoint(formContent, proxy, tenant);
-            }
-        }
-
-        private static string GetTokenWithUserNameAndPasswordAndScope(string username, string password, string proxy, string scope, string clientId, string tenant, bool UseOAuthV2)
+        private static string GetTokenWithUserNameAndPasswordV2(string username, string password, string proxy, string scope, string clientId, string tenant)
         {
             var formContent = new FormUrlEncodedContent(new[]
                 {
@@ -149,15 +114,58 @@ namespace SharpAzToken
                 new KeyValuePair<string, string>("password", password),
                 new KeyValuePair<string, string>("claims", "{\"access_token\":{\"xms_cc\":{\"values\":[\"cp1\"]}}}")
                 });
+            return Helper.PostToTokenV2Endpoint(formContent, proxy, tenant);
 
-            if (UseOAuthV2)
-            {
-                return Helper.PostToTokenV2Endpoint(formContent, proxy, tenant);
-            }
-            else
-            {
-                return Helper.PostToTokenEndpoint(formContent, proxy, tenant);
-            }
+        }
+
+        public static string GetTokenFromRefreshTokenV1(string refreshToken, string tenant, string proxy, string clientID, string ressourceId)
+        {
+            var formContent = new FormUrlEncodedContent(new[]
+                {
+                new KeyValuePair<string, string>("scope", "openid"),
+                new KeyValuePair<string, string>("grant_type", "refresh_token"),
+                new KeyValuePair<string, string>("resource", ressourceId),
+                new KeyValuePair<string, string>("client_id", clientID),
+                new KeyValuePair<string, string>("refresh_token", refreshToken)
+                });           
+                return Helper.PostToTokenEndpoint(formContent, proxy, tenant); 
+        }
+        public static string GetTokenWithRefreshTokenV2(string refreshToken, string proxy, string scope, string clientId, string tenant)
+        {
+            var formContent = new FormUrlEncodedContent(new[]
+                {
+                new KeyValuePair<string, string>("grant_type", "refresh_token"),
+                new KeyValuePair<string, string>("scope", scope),
+                new KeyValuePair<string, string>("client_id", clientId),
+                new KeyValuePair<string, string>("claims", "{\"access_token\":{\"xms_cc\":{\"values\":[\"cp1\"]}}}"),
+                new KeyValuePair<string, string>("refresh_token", refreshToken)
+                });
+            return Helper.PostToTokenV2Endpoint(formContent, proxy, tenant);
+        }
+        public static string GetTokenWithCodeV1(string code, string tenant, string proxy, string clientID, string ressourceId)
+        {
+            var formContent = new FormUrlEncodedContent(new[]
+                {
+                new KeyValuePair<string, string>("grant_type", "authorization_code"),
+                new KeyValuePair<string, string>("resource", ressourceId),
+                new KeyValuePair<string, string>("client_id", clientID),
+                new KeyValuePair<string, string>("redirect_uri", "urn:ietf:wg:oauth:2.0:oob"),
+                new KeyValuePair<string, string>("code", code)
+                });
+            return Helper.PostToTokenEndpoint(formContent, proxy, tenant);
+        }
+
+        public static string GetTokenWithCodeV2(string code, string tenant, string proxy, string clientID, string scope)
+        {
+            var formContent = new FormUrlEncodedContent(new[]
+                {
+                new KeyValuePair<string, string>("grant_type", "authorization_code"),
+                new KeyValuePair<string, string>("scope", scope),
+                new KeyValuePair<string, string>("client_id", clientID),
+                new KeyValuePair<string, string>("redirect_uri", "urn:ietf:wg:oauth:2.0:oob"),
+                new KeyValuePair<string, string>("code", code)
+                });
+            return Helper.PostToTokenV2Endpoint(formContent, proxy, tenant);
         }
 
         public static string GetP2PCertificate(string JWT, string tenant, string proxy)
@@ -166,16 +174,23 @@ namespace SharpAzToken
          } 
         
 
-        public static string GetTokenFromPRTAndDerivedKey(string PRT, string tenant, string DerivedKey, string Context, string Proxy, string clientID, string resourceID)
+        public static string GetTokenFromPRTAndDerivedKey(string PRT, string tenant, string DerivedKey, string Context, string Proxy, string clientID, string payload, bool useAuthV2)
         {
             string result = null;
             string prtCookie = Helper.createPRTCookie(PRT, Context, DerivedKey, Proxy);
-            string code = Helper.getCodeFromPRTCookie(prtCookie, Proxy, resourceID, clientID);
-            result = GetTokenWithCode(code, tenant, Proxy, clientID, resourceID);
+            if (useAuthV2)
+            {
+                string code = Helper.getCodeFromPRTCookieV2(prtCookie, Proxy, payload, clientID);
+                result = GetTokenWithCodeV2(code, tenant, Proxy, clientID, payload);
+            }
+            else {
+                string code = Helper.getCodeFromPRTCookieV1(prtCookie, Proxy, payload, clientID);
+                result = GetTokenWithCodeV1(code, tenant, Proxy, clientID, payload);
+            }
             return result;
         }
 
-        public static string GetTokenFromPRTAndSessionKey(string PRT, string tenant, string SessionKey, string Proxy, string clientID, string resourceID)
+        public static string GetTokenFromPRTAndSessionKey(string PRT, string tenant, string SessionKey, string Proxy, string clientID, string payload, bool useOauthv2)
         {
             string result = null;
             var context = Helper.GetByteArray(24);
@@ -186,29 +201,54 @@ namespace SharpAzToken
             var derivedSessionKeyHex = Helper.Binary2Hex(derivedKey);
 
             string prtCookie = Helper.createPRTCookie(PRT, contextHex, derivedSessionKeyHex, Proxy);
-            string code = Helper.getCodeFromPRTCookie(prtCookie, Proxy, resourceID, clientID);
+            String code = null;
+            if (useOauthv2)
+            {
+                code = Helper.getCodeFromPRTCookieV2(prtCookie, Proxy, payload, clientID);
+            }
+            else
+            {
+                code = Helper.getCodeFromPRTCookieV1(prtCookie, Proxy, payload, clientID);
+            }
             if(code == null | code.Length == 0)
             {
                 return null;
             }
-            result = GetTokenWithCode(code, tenant, Proxy, clientID, resourceID);
+            if (useOauthv2)
+            {
+                result = GetTokenWithCodeV2(code, tenant, Proxy, clientID, payload);
+            }
+            else
+            {
+                result = GetTokenWithCodeV1(code, tenant, Proxy, clientID, payload);
+            }
             return result;
         }
 
-        public static string GetTokenFromPRTCookie(string PRTCookie, string Proxy, string clientID, string resourceID)
+        public static string GetTokenFromPRTCookieV1(string PRTCookie, string Proxy, string clientID, string resourceID)
         {
-            string code = Helper.getCodeFromPRTCookie(PRTCookie, Proxy, resourceID, clientID);
+            string code = Helper.getCodeFromPRTCookieV1(PRTCookie, Proxy, resourceID, clientID);
             if (code == null || code.Length == 0)
             {
                 return null;
             }
-            return GetTokenWithCode(code, null, Proxy, clientID, resourceID);
+            return GetTokenWithCodeV1(code, null, Proxy, clientID, resourceID);
         }
 
-        public static string GetTokenFromDeviceCodeFlow(string ClientID, string ResourceID, string Proxy)
+        public static string GetTokenFromPRTCookieV2(string PRTCookie, string Proxy, string clientID, String scope)
+        {
+            string code = Helper.getCodeFromPRTCookieV2(PRTCookie, Proxy, scope, clientID);
+            if (code == null || code.Length == 0)
+            {
+                return null;
+            }
+            return GetTokenWithCodeV1(code, null, Proxy, clientID, scope);
+        }
+
+        public static string GetTokenFromDeviceCodeFlow(string ClientID, string ResourceID, string Proxy, bool useOAuthV2)
         {
             string result = null;
-            result = RequestDeviceCode(ClientID, ResourceID, Proxy);
+            result = RequestDeviceCode(ClientID, ResourceID, Proxy, useOAuthV2);
             var InitDeviceCode = JsonConvert.DeserializeObject<DeviceCodeResp>(result);
             Console.WriteLine(JToken.FromObject(InitDeviceCode).ToString(Formatting.Indented));
 
@@ -216,7 +256,7 @@ namespace SharpAzToken
             int WaitedTime = 0;
             while (WaitedTime < InitDeviceCode.expires_in)
             {
-                result = RequestForPendingAuthentication(InitDeviceCode.device_code, ClientID, Proxy);
+                result = RequestForPendingAuthentication(InitDeviceCode.device_code, ClientID, Proxy, useOAuthV2 );
                 JToken parsedesults = JToken.Parse(result);
                 if (parsedesults["error"] != null)
                 {
@@ -232,7 +272,7 @@ namespace SharpAzToken
             return null;
         }
 
-        public static string getToken(TokenOptions opts)
+        public static string getTokenV1(TokenOptionsV1 opts)
         {
             string result = null;
             string clientID = opts.ClientID;
@@ -240,38 +280,73 @@ namespace SharpAzToken
 
             if (opts.Devicecode)
             {
-                result = GetTokenFromDeviceCodeFlow(clientID, resourceID, opts.Proxy);
+                result = GetTokenFromDeviceCodeFlow(clientID, resourceID, opts.Proxy, false);
             }
             else if (opts.PRT != null & opts.DerivedKey != null & opts.Context != null)
             {
-                result = GetTokenFromPRTAndDerivedKey(opts.PRT, opts.Tenant, opts.DerivedKey, opts.Context, opts.Proxy, clientID, resourceID);
+                result = GetTokenFromPRTAndDerivedKey(opts.PRT, opts.Tenant, opts.DerivedKey, opts.Context, opts.Proxy, clientID, resourceID, false);
             }
             else if (opts.PRT != null & opts.SessionKey != null)
             {
-                result = GetTokenFromPRTAndSessionKey(opts.PRT, opts.Tenant, opts.SessionKey, opts.Proxy, clientID, resourceID);
+                result = GetTokenFromPRTAndSessionKey(opts.PRT, opts.Tenant, opts.SessionKey, opts.Proxy, clientID, resourceID, false);
             }
             else if (opts.PrtCookie != null)
             {
-                result = GetTokenFromPRTCookie(opts.PrtCookie, opts.Proxy, clientID, resourceID);
-            }
-            else if (opts.RefreshToken != null & opts.Scope == null)
-            {
-                result = GetTokenFromRefreshToken(opts.RefreshToken, opts.Tenant, opts.Proxy, clientID, resourceID, opts.UseOAuthV2);
-            }else if(opts.RefreshToken != null & opts.Scope != null)
-            {
-                result = GetTokenWithRefreshTokenAndScope(opts.RefreshToken, opts.Proxy, opts.Scope, opts.ClientID, opts.Tenant, opts.UseOAuthV2);
-            }
-            else if (opts.UserName != null & opts.Password != null & opts.Scope == null)
-            {
-                result = GetTokenFromUsernameAndPassword(opts.UserName, opts.Password, opts.Tenant, opts.Proxy, clientID, resourceID, opts.UseOAuthV2);
-            }
-            else if (opts.UserName != null & opts.Password != null &opts.Scope != null)
-            {
-                result = GetTokenWithUserNameAndPasswordAndScope(opts.UserName, opts.Password, opts.Proxy, opts.Scope, opts.ClientID, opts.Tenant, opts.UseOAuthV2 );
+                result = GetTokenFromPRTCookieV1(opts.PrtCookie, opts.Proxy, clientID, resourceID);
             }
             else if (opts.Tenant != null & opts.ClientID != null & opts.ClientSecret != null)
             {
-                result = GetTokenWithClientIDAndSecret(opts.ClientID, opts.ClientSecret, opts.Tenant, opts.Proxy, opts.ResourceID, opts.UseOAuthV2);
+                result = GetTokenWithClientIDAndSecret(opts.ClientID, opts.ClientSecret, opts.Tenant, opts.Proxy, resourceID, false);
+            }
+            else if (opts.RefreshToken != null & opts.ResourceID != null)
+            {
+                result = GetTokenFromRefreshTokenV1(opts.RefreshToken, opts.Proxy, opts.ResourceID, opts.ClientID, opts.Tenant);
+            }
+            else if (opts.UserName != null & opts.Password != null)
+            {
+                result = GetTokenFromUsernameAndPasswordV1(opts.UserName, opts.Password, opts.Proxy, opts.ResourceID, opts.ClientID, opts.Tenant);
+            }
+            else
+            {
+                Console.WriteLine("[-] Please set the corect arguments.");
+                return null;
+            }
+            return result;
+        }
+
+        public static string getTokenV2(TokenOptionsV2 opts)
+        {
+            string result = null;
+            string clientID = opts.ClientID;
+            string scope = opts.Scope;
+
+            if (opts.Devicecode)
+            {
+                result = GetTokenFromDeviceCodeFlow(clientID, scope, opts.Proxy, true);
+            }
+            else if (opts.PRT != null & opts.DerivedKey != null & opts.Context != null)
+            {
+                result = GetTokenFromPRTAndDerivedKey(opts.PRT, opts.Tenant, opts.DerivedKey, opts.Context, opts.Proxy, clientID, scope, true);
+            }
+            else if (opts.PRT != null & opts.SessionKey != null)
+            {
+                result = GetTokenFromPRTAndSessionKey(opts.PRT, opts.Tenant, opts.SessionKey, opts.Proxy, clientID, scope, true);
+            }
+            else if (opts.RefreshToken != null & opts.Scope != null)
+            {
+                result = GetTokenWithRefreshTokenV2(opts.RefreshToken, opts.Proxy, opts.Scope, opts.ClientID, opts.Tenant);
+            }
+            else if (opts.UserName != null & opts.Password != null)
+            {
+                result = GetTokenWithUserNameAndPasswordV2(opts.UserName, opts.Password, opts.Proxy, opts.Scope, opts.ClientID, opts.Tenant);
+            }
+            else if (opts.Tenant != null & opts.ClientID != null & opts.ClientSecret != null)
+            {
+                result = GetTokenWithClientIDAndSecret(opts.ClientID, opts.ClientSecret, opts.Tenant, opts.Proxy, scope, true);
+            }
+            else if (opts.PrtCookie != null)
+            {
+                result = GetTokenFromPRTCookieV2(opts.PrtCookie, opts.Proxy, clientID, scope);
             }
             else
             {

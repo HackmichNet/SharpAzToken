@@ -9,7 +9,7 @@ namespace SharpAzToken
         public const string DeviceMgmt = "01cb2876-7ebd-4aa4-9cc9-d28bd4d359a9";
         public const string GraphAPI = "1b730954-1685-4b74-9bfd-dac224a7b894";
         public const string AzureMDM = "29d9ed98-a469-4536-ade2-f981bc1d605e";
-        public const string Outlook = "d3590ed6-52b3-4102-aeff-aad2292ab01c";
+        public const string MicrosoftOffice = "d3590ed6-52b3-4102-aeff-aad2292ab01c";
         public const string Substrate = "d3590ed6-52b3-4102-aeff-aad2292ab01c";
         public const string Teams = "d3590ed6-52b3-4102-aeff-aad2292ab01c";
         public const string MSGraph = "d3590ed6-52b3-4102-aeff-aad2292ab01c";

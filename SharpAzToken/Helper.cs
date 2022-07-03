@@ -15,13 +15,25 @@ namespace SharpAzToken
 {
     class Helper
     {
-        public static string getCodeFromPRTCookie(string cookie, string proxy, string resourceID, string clientID)
+        public static string getCodeFromPRTCookieV1(string cookie, string proxy, string resourceID, string clientID)
         {
             String uri = string.Format(@"/common/oauth2/authorize?client_id={0}&resource={1}&response_type=code&&redirect_uri=urn:ietf:wg:oauth:2.0:oob",
                 clientID,
                 resourceID
              );
+            return getCodeFromPRTCookie(cookie, proxy, uri);
+        }
 
+        public static string getCodeFromPRTCookieV2(string cookie, string proxy, string scope, string clientID)
+        {
+            String uri = string.Format(@"/common/oauth2/authorize?client_id={0}&scope={1}&response_type=code&&redirect_uri=urn:ietf:wg:oauth:2.0:oob",
+                clientID,
+                scope
+             );
+            return getCodeFromPRTCookie(cookie, proxy, uri);
+        }
+        public static string getCodeFromPRTCookie(string cookie, string proxy, string uri)
+        {
             HttpClient client = getDefaultClient(proxy);
             using (client)
             {
@@ -253,9 +265,17 @@ namespace SharpAzToken
             return GetFrom(uri,proxy);
         }
 
-        public static string PostToDeviceCodeEndpoint(FormUrlEncodedContent formContent, string proxy)
+        public static string PostToDeviceCodeEndpoint(FormUrlEncodedContent formContent, string proxy, bool useOAuthV2)
         {
-            string uri = "/common/oauth2/devicecode";
+            string uri = null;
+            if (useOAuthV2)
+            {
+                uri = "/common/oauth2/v2.0/devicecode";
+            }
+            else
+            {
+                uri = "/common/oauth2/devicecode";
+            }
             return PostTo(uri, formContent, proxy);
         }
 
