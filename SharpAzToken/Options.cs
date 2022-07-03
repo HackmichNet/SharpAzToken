@@ -178,7 +178,7 @@ namespace SharpAzToken
         [Option(HelpText = "Use password")]
         public string Password { get; set; }
 
-        [Option(HelpText = "Set a client used for token request, you can choose between: Outlook, Substrate, Teams, Graph, MSGraph, Core, Office, Intune, Windows, ComplianceCenter, SharepointOnline or ExchangeOnlineV2. Or you can set custom values with --clientid and --resourceid")]
+        [Option(HelpText = "Set a client used for token request, you can choose between: Outlook, Substrate, Teams, Graph, MSGraph, Core, Office, Intune, Windows, ComplianceCenter or ExchangeOnlineV2. Or you can set custom values with --clientid and --scope")]
         public string ClientName { get; set; }
 
         [Option(HelpText = "Set a custom scope", Default = ".default offline_access")]
