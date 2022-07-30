@@ -501,7 +501,7 @@ namespace SharpAzToken
                 var contextHex = Helper.Binary2Hex(context);
                 var derivedSessionKeyHex = Helper.Binary2Hex(derivedKey);
 
-                PRTCookie = Helper.createPRTCookie(opts.PRT, contextHex, derivedSessionKeyHex, opts.Proxy);
+                PRTCookie = Helper.createPRTCookie2(opts.PRT, opts.Proxy, opts.SessionKey, opts.useKDFv2);
             }
             else
             {

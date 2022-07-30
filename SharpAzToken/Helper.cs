@@ -10,6 +10,8 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace SharpAzToken
 {
@@ -142,6 +144,61 @@ namespace SharpAzToken
             s = s.Replace('+', '-'); // 62nd char of encoding
             s = s.Replace('/', '_'); // 63rd char of encoding
             return s;
+        }
+
+        public static string createPRTCookie2(string prt, string proxy, string sessionkey, bool useKDFv2)
+        {
+            string nonce = getNonce(proxy);
+           
+            byte[] data = Base64Decode(prt);
+            string prtdecoded = Encoding.UTF8.GetString(data);
+
+
+            //https://stackoverflow.com/questions/9453101/how-do-i-get-epoch-time-in-c
+            TimeSpan t = DateTime.UtcNow - new DateTime(1970, 1, 1);
+            int iat = (int)t.TotalSeconds;
+           
+            var payload = new Dictionary<string, object>
+            {
+                { "refresh_token", prtdecoded },
+                { "is_primary", "true" },
+                { "iat", iat },
+                { "request_nonce", nonce }
+            };
+
+            var context = Helper.GetByteArray(24);
+            string c = Helper.Base64UrlEncode(context);
+            context = Helper.Base64Decode("VHXKML9s9Z6oPR/jFi9uI77owwV/cy99");
+            Dictionary<string, object> header = null;
+            var derivedContext = context;
+            if (useKDFv2)
+            {
+                header = new Dictionary<string, object>
+                {
+                    { "ctx", context },
+                    { "kdf_ver", 2 }
+
+                };
+                derivedContext = GetKDFv2(payload, derivedContext);
+            }
+            else
+            {
+                header = new Dictionary<string, object>
+                {
+                    { "ctx", context }
+                };
+            }
+
+            IJwtAlgorithm algorithm = new HMACSHA256Algorithm(); // symmetric
+            IJsonSerializer serializer = new JsonNetSerializer();
+            IBase64UrlEncoder urlEncoder = new JwtBase64UrlEncoder();
+            IJwtEncoder encoder = new JwtEncoder(algorithm, serializer, urlEncoder);
+            
+            var decodedKey = Helper.Base64Decode(sessionkey);
+            var derivedKey = Helper.CreateDerivedKey(decodedKey, derivedContext);
+            
+            var cookie = encoder.Encode(header, payload, derivedKey);
+            return cookie;
         }
 
         public static string createPRTCookie(string prt, string context, string derived_sessionkey, string proxy, byte[] contextBytes = null, byte[] sessionKeyBytes = null)
@@ -362,7 +419,8 @@ namespace SharpAzToken
             value = CombineByteArrays(value, contextBytes);
             value = CombineByteArrays(value, third);
             var hmac = new System.Security.Cryptography.HMACSHA256(sessionKeyBytes);
-            return hmac.ComputeHash(value);
+            var hmacOutput = hmac.ComputeHash(value);
+            return hmacOutput;
         }
 
         public static byte[] ConvertToByteArray(string str, Encoding encoding)
@@ -373,6 +431,21 @@ namespace SharpAzToken
         public static String ToBinary(Byte[] data)
         {
             return string.Join(" ", data.Select(byt => Convert.ToString(byt, 2).PadLeft(8, '0')));
+        }
+
+        public static byte[] GetKDFv2(Dictionary<string, object> payload, Byte[] context)
+        {
+            var SHA256 = System.Security.Cryptography.SHA256.Create();
+            //var payloadJsons = JsonConvert.SerializeObject(payload);
+            string payloadJson = JsonSerializer.Serialize(payload);
+            payloadJson = payloadJson.Replace(@"\", "");
+            payloadJson = payloadJson.Replace(@" ", String.Empty);
+            var encodedJSON = Encoding.UTF8.GetBytes(payloadJson);
+            var buffer = new byte[encodedJSON.Length + context.Length];
+
+            Array.Copy(context, 0, buffer, 0, context.Length);
+            Array.Copy(encodedJSON, 0, buffer, context.Length, encodedJSON.Length);
+            return SHA256.ComputeHash(buffer);
         }
     }
 }

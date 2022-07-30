@@ -190,7 +190,7 @@ namespace SharpAzToken
             return result;
         }
 
-        public static string GetTokenFromPRTAndSessionKey(string PRT, string tenant, string SessionKey, string Proxy, string clientID, string payload, bool useOauthv2)
+        public static string GetTokenFromPRTAndSessionKey(string PRT, string tenant, string SessionKey, string Proxy, string clientID, string payload, bool useOauthv2, bool useKDFv2)
         {
             string result = null;
             var context = Helper.GetByteArray(24);
@@ -200,8 +200,8 @@ namespace SharpAzToken
             var contextHex = Helper.Binary2Hex(context);
             var derivedSessionKeyHex = Helper.Binary2Hex(derivedKey);
 
-            string prtCookie = Helper.createPRTCookie(PRT, contextHex, derivedSessionKeyHex, Proxy);
-            String code = null;
+            string prtCookie = Helper.createPRTCookie2(PRT, Proxy, SessionKey, useKDFv2);
+            string code;
             if (useOauthv2)
             {
                 code = Helper.getCodeFromPRTCookieV2(prtCookie, Proxy, payload, clientID);
@@ -288,7 +288,7 @@ namespace SharpAzToken
             }
             else if (opts.PRT != null & opts.SessionKey != null)
             {
-                result = GetTokenFromPRTAndSessionKey(opts.PRT, opts.Tenant, opts.SessionKey, opts.Proxy, clientID, resourceID, false);
+                result = GetTokenFromPRTAndSessionKey(opts.PRT, opts.Tenant, opts.SessionKey, opts.Proxy, clientID, resourceID, false, opts.useKDFv2);
             }
             else if (opts.PrtCookie != null)
             {
@@ -330,7 +330,7 @@ namespace SharpAzToken
             }
             else if (opts.PRT != null & opts.SessionKey != null)
             {
-                result = GetTokenFromPRTAndSessionKey(opts.PRT, opts.Tenant, opts.SessionKey, opts.Proxy, clientID, scope, true);
+                result = GetTokenFromPRTAndSessionKey(opts.PRT, opts.Tenant, opts.SessionKey, opts.Proxy, clientID, scope, true, opts.useKDFv2);
             }
             else if (opts.RefreshToken != null & opts.Scope != null)
             {
