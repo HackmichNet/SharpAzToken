@@ -1,6 +1,7 @@
 ﻿using CommandLine;
 using CommandLine.Text;
 using JWT;
+using JWT.Algorithms;
 using JWT.Serializers;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -66,11 +67,10 @@ namespace SharpAzToken
         {
             String result = null;
             RSA rsa;
-            bool t = (opts.Context != null & opts.DerivedKey != null) | (opts.SessionKey != null);
-            if (opts.PRT != null && ((opts.Context != null & opts.DerivedKey != null)|(opts.SessionKey != null)) && opts.UserName != null)
+            if (opts.PRT != null && ((opts.Context != null & opts.DerivedKey != null) | (opts.SessionKey != null)) && opts.UserName != null)
             {
                 String tenant = null;
-                if(opts.Tenant != null)
+                if (opts.Tenant != null)
                 {
                     tenant = opts.Tenant;
                 }
@@ -83,30 +83,12 @@ namespace SharpAzToken
                 CertificateRequest req = new System.Security.Cryptography.X509Certificates.CertificateRequest(CN, rsa, System.Security.Cryptography.HashAlgorithmName.SHA256, System.Security.Cryptography.RSASignaturePadding.Pkcs1);
                 var csr = Convert.ToBase64String(req.CreateSigningRequest());
                 string nonce = Helper.GetNonce2(opts.Proxy);
-                String derivedSessionKey;
+                byte[] derivedSessionKey;
                 Dictionary<string, object> headerRaw;
-                if (opts.Context != null && opts.DerivedKey != null)
-                {
-                    var ctx = Helper.Hex2Binary(opts.Context);
-                    headerRaw = new Dictionary<string, object>
-                    {
-                        { "ctx", ctx }
-                    };
-                    derivedSessionKey = opts.DerivedKey;
-                }
-                else
-                {
-                    var context = Helper.GetByteArray(24);
-                    var decodedKey = Helper.Base64Decode(opts.SessionKey);
-                    var derivedKey = Helper.CreateDerivedKey(decodedKey, context);
-                    derivedSessionKey = Helper.Binary2Hex(derivedKey);
-                    headerRaw = new Dictionary<string, object>
-                    {
-                        { "ctx", context }
-                    };
-                }
                 byte[] data = Helper.Base64Decode(opts.PRT);
                 string prtdecoded = Encoding.UTF8.GetString(data);
+                byte[] decodedKey;
+                byte[] derivedKey;
 
                 Dictionary<string, object> payload = new Dictionary<string, object>
                 {
@@ -123,10 +105,66 @@ namespace SharpAzToken
                     { "prt_protocol_version", "3.8"}
                 };
 
-                
-                var JWT = Helper.signJWT(headerRaw, payload, derivedSessionKey);
-                result = Tokenator.GetP2PCertificate(JWT, opts.Tenant, opts.Proxy);
-                
+                if (opts.Context != null && opts.DerivedKey != null)
+                {
+                    var ctx = Helper.Hex2Binary(opts.Context);
+                    headerRaw = new Dictionary<string, object>
+                    {
+                        { "ctx", ctx }
+                    };
+                    derivedSessionKey = Helper.Hex2Binary(opts.DerivedKey);
+                }
+                else
+                {
+                    decodedKey = Helper.Base64Decode(opts.SessionKey);
+                    var context = Helper.GetByteArray(24);
+                    if (opts.useKDFv2) { 
+                        var derivedContext = Helper.GetKDFv2(payload, context);
+                        derivedKey = Helper.CreateDerivedKey(decodedKey, derivedContext);
+                        derivedSessionKey = derivedKey;
+                        headerRaw = new Dictionary<string, object>
+                        {
+                            { "ctx", context },
+                            { "kdf_ver", 2 }
+                        };
+                    }
+                    else
+                    { 
+                        derivedKey = Helper.CreateDerivedKey(decodedKey, context);
+                        derivedSessionKey = derivedKey;
+                        headerRaw = new Dictionary<string, object>
+                        {
+                            { "ctx", context }
+                        };
+                    }
+                }
+
+                IJwtAlgorithm algorithm = new HMACSHA256Algorithm(); // symmetric
+                IJsonSerializer serializer = new JsonNetSerializer();
+                IBase64UrlEncoder urlEncoder = new JwtBase64UrlEncoder();
+                IJwtEncoder encoder = new JwtEncoder(algorithm, serializer, urlEncoder);
+
+                var JWT = encoder.Encode(headerRaw, payload, derivedSessionKey);
+
+                FormUrlEncodedContent formContent; 
+                if (opts.useKDFv2)
+                {
+                    formContent = new FormUrlEncodedContent(new[]
+                    {
+                    new KeyValuePair<string, string>("grant_type", "urn:ietf:params:oauth:grant-type:jwt-bearer"),
+                    new KeyValuePair<string, string>("request", JWT),
+                    });
+                }
+                else
+                {
+                    formContent = new FormUrlEncodedContent(new[]
+                    {
+                    new KeyValuePair<string, string>("grant_type", "urn:ietf:params:oauth:grant-type:jwt-bearer"),
+                    new KeyValuePair<string, string>("request", JWT),
+                    new KeyValuePair<string, string>("windows_api_version", "1.0")
+                    });
+                }
+                result = Helper.PostToTokenEndpoint(formContent, opts.Proxy, opts.Tenant);
             }
             else if (opts.PFXPath != null && opts.Tenant != null && opts.DeviceName != null)
             {

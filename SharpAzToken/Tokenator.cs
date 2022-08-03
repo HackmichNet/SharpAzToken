@@ -60,7 +60,7 @@ namespace SharpAzToken
                 new KeyValuePair<string, string>("request", JWT),
                 new KeyValuePair<string, string>("windows_api_version", "1.0")
                 });
-                return Helper.PostToTokenEndpoint(formContent, proxy, tenant);
+            return Helper.PostToTokenEndpoint(formContent, proxy, tenant);
         }
 
         public static string GetTokenWithClientIDAndSecret(string clientID, string clientSecret, string tenant, string proxy, string payload, bool UseOAuthV2)

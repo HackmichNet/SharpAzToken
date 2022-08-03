@@ -167,8 +167,6 @@ namespace SharpAzToken
             };
 
             var context = Helper.GetByteArray(24);
-            string c = Helper.Base64UrlEncode(context);
-            context = Helper.Base64Decode("VHXKML9s9Z6oPR/jFi9uI77owwV/cy99");
             Dictionary<string, object> header = null;
             var derivedContext = context;
             if (useKDFv2)
@@ -179,7 +177,7 @@ namespace SharpAzToken
                     { "kdf_ver", 2 }
 
                 };
-                derivedContext = GetKDFv2(payload, derivedContext);
+                derivedContext = GetKDFv2(payload,  context);
             }
             else
             {
@@ -249,6 +247,8 @@ namespace SharpAzToken
             var cookie = encoder.Encode(header, payload, sdata);
             return cookie;
         }
+
+
 
         public static string signJWT(Dictionary<string, object> header, Dictionary<string, object> payload, string key)
         {
