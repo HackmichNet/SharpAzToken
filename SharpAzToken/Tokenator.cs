@@ -89,7 +89,7 @@ namespace SharpAzToken
             }
         }
 
-        public static string GetTokenFromUsernameAndPasswordV1(string username, string password, string tenant, string proxy, string clientID, string ressourceId)
+        public static string GetTokenFromUsernameAndPasswordV1(string username, string password, string proxy, string clientID, string ressourceId, string tenant)
         {
             var formContent = new FormUrlEncodedContent(new[]
                 {
@@ -304,7 +304,7 @@ namespace SharpAzToken
             }
             else if (opts.UserName != null & opts.Password != null)
             {
-                result = GetTokenFromUsernameAndPasswordV1(opts.UserName, opts.Password, opts.Proxy, opts.ResourceID, opts.ClientID, opts.Tenant);
+                result = GetTokenFromUsernameAndPasswordV1(opts.UserName, opts.Password, opts.Proxy, opts.ClientID, opts.ResourceID, opts.Tenant);
             }
             else
             {

@@ -275,7 +275,7 @@ namespace SharpAzToken
             }
             else if (opts.UserName != null && opts.Password != null)
             {
-                String initTokens = Tokenator.GetTokenFromUsernameAndPasswordV1(opts.UserName, opts.Password, opts.Tenant, opts.Proxy, AzClientIDEnum.AzureMDM, AzResourceEnum.AzureMDM);
+                String initTokens = Tokenator.GetTokenFromUsernameAndPasswordV1(opts.UserName, opts.Password, opts.Proxy, AzClientIDEnum.AzureMDM, AzResourceEnum.AzureMDM, opts.Tenant);
                 if (initTokens == null)
                 {
                     Console.WriteLine("[-] Authentication failed. Please check used credentials!");
@@ -416,7 +416,7 @@ namespace SharpAzToken
                     }
                     else
                     {
-                        String token = Tokenator.GetTokenFromUsernameAndPasswordV1(opts.UserName, opts.Password, opts.Tenant, opts.Proxy, AzClientIDEnum.GraphAPI, AzResourceEnum.WindowsClient);
+                        String token = Tokenator.GetTokenFromUsernameAndPasswordV1(opts.UserName, opts.Password, opts.Proxy, AzClientIDEnum.GraphAPI, AzResourceEnum.WindowsClient, opts.Tenant);
                         if (token == null)
                         {
                             Console.WriteLine("[-] Authentication failed! ");
