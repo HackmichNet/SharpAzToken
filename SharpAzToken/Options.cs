@@ -226,4 +226,18 @@ namespace SharpAzToken
         [Option(HelpText = "Set password")]
         public string Password { get; set; }
     }
+
+    [Verb("focify", HelpText = "Use the reasearch of Secureworks to create a lot of refreshtoktens out of a given one.")]
+    class FocifyOptions : DefaultOptions
+    {
+        [Option(HelpText = "Set RefreshToken to create foci tokens.")]
+        public string RefreshToken { get; set; }
+
+        [Option(HelpText = "Set Tenant")]
+        public string Tenant { get; set; }
+
+        [Option(HelpText = "Set a custom scope", Default = ".default offline_access")]
+        public string Scope { get; set; }
+
+    }
 }

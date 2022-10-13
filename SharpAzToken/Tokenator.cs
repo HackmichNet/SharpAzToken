@@ -130,17 +130,32 @@ namespace SharpAzToken
                 });           
                 return Helper.PostToTokenEndpoint(formContent, proxy, tenant); 
         }
-        public static string GetTokenWithRefreshTokenV2(string refreshToken, string proxy, string scope, string clientId, string tenant)
+        public static string GetTokenWithRefreshTokenV2(string refreshToken, string proxy, string scope, string clientId, string tenant, string claims = @"{""access_token"":{""xms_cc"":{""values"":[""cp1""]}}}")
         {
-            var formContent = new FormUrlEncodedContent(new[]
+            if(claims != null)
+            {
+                var formContent = new FormUrlEncodedContent(new[]
                 {
                 new KeyValuePair<string, string>("grant_type", "refresh_token"),
                 new KeyValuePair<string, string>("scope", scope),
                 new KeyValuePair<string, string>("client_id", clientId),
-                new KeyValuePair<string, string>("claims", "{\"access_token\":{\"xms_cc\":{\"values\":[\"cp1\"]}}}"),
+                new KeyValuePair<string, string>("claims", claims),
                 new KeyValuePair<string, string>("refresh_token", refreshToken)
                 });
-            return Helper.PostToTokenV2Endpoint(formContent, proxy, tenant);
+                return Helper.PostToTokenV2Endpoint(formContent, proxy, tenant);
+            }
+            else
+            {
+                var formContent = new FormUrlEncodedContent(new[]
+{
+                new KeyValuePair<string, string>("grant_type", "refresh_token"),
+                new KeyValuePair<string, string>("scope", scope),
+                new KeyValuePair<string, string>("client_id", clientId),
+                new KeyValuePair<string, string>("refresh_token", refreshToken)
+                });
+                return Helper.PostToTokenV2Endpoint(formContent, proxy, tenant);
+            }
+            
         }
         public static string GetTokenWithCodeV1(string code, string tenant, string proxy, string clientID, string ressourceId)
         {

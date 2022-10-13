@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
+using System.Reflection;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
@@ -49,7 +50,7 @@ namespace SharpAzToken
         static int Main(string[] args)
         {
             PrintBanner();
-            var parserResult = new Parser(c => c.HelpWriter = null).ParseArguments<P2POptions, NonceOptions, CookieOptions, TokenOptionsV1, TokenOptionsV2, DeviceOptions, DeviceKeyOptions, UtilsOptions>(args);
+            var parserResult = new Parser(c => c.HelpWriter = null).ParseArguments<P2POptions, NonceOptions, CookieOptions, TokenOptionsV1, TokenOptionsV2, DeviceOptions, DeviceKeyOptions, UtilsOptions, FocifyOptions>(args);
             return parserResult.MapResult(
                     (P2POptions options) => RunP2PAction(options),
                     (DeviceKeyOptions options) => RunDeviceKeys(options),
@@ -59,6 +60,7 @@ namespace SharpAzToken
                     (TokenOptionsV1 options) => RunTokenV1(options),
                     (TokenOptionsV2 options) => RunTokenV2(options),
                     (UtilsOptions options) => RunUtils(options),
+                    (FocifyOptions options) => RunFocify(options),
                     errs => DisplayHelp(parserResult)
             );
         }
@@ -520,6 +522,53 @@ namespace SharpAzToken
 
             Console.WriteLine(Helper.getNonce(opts.Proxy));
             Console.WriteLine("");
+            return 0;
+        }
+
+        static int RunFocify(FocifyOptions opts)
+        {
+            Console.WriteLine("[+] Starting to focify your token.");
+            FociClients clients = new FociClients();
+            foreach (FieldInfo info in clients.GetType().GetFields())
+            {
+                var type = Nullable.GetUnderlyingType(info.FieldType) ?? info.FieldType;
+                if (type == typeof(String))
+                {
+                    //Console.WriteLine(info.GetValue(null).ToString());
+                    String result = Tokenator.GetTokenWithRefreshTokenV2(opts.RefreshToken, opts.Proxy, opts.Scope, info.GetValue(null).ToString(), opts.Tenant, null);
+                    if (result != null)
+                    {
+                        var serializer = new JsonNetSerializer();
+                        var urlEncoder = new JwtBase64UrlEncoder();
+                        var decoder = new JwtDecoder(serializer, urlEncoder);
+                        JToken parsedJson = JToken.Parse(result);
+
+                        if (parsedJson["error"] != null)
+                        {
+                            Console.WriteLine("[-] Something went wrong!");
+                            Console.WriteLine("");
+
+                            Console.WriteLine(parsedJson["error_description"].ToString());
+                            Console.WriteLine("");
+                        }
+
+                        if (parsedJson["id_token"] != null)
+                        {
+                            var id_token = decoder.Decode(parsedJson["id_token"].ToString());
+                            var parsedIDToken = JToken.Parse(id_token);
+                            parsedJson["id_token"] = parsedIDToken;
+                        }
+
+                        Console.WriteLine("[+] Here is your token:");
+                        Console.WriteLine("");
+                        var beautified = parsedJson.ToString(Formatting.Indented);
+                        Console.WriteLine(beautified);
+                        Console.WriteLine("");
+                        Console.WriteLine("==============================================");
+                        Console.WriteLine("");
+                    }
+                }
+            }
             return 0;
         }
 
