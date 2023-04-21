@@ -577,18 +577,26 @@ namespace SharpAzToken
             string PRTCookie = null;
             if (opts.PRT != null && opts.DerivedKey != null && opts.Context != null)
             {
-                PRTCookie = Helper.createPRTCookie(opts.PRT, opts.Context, opts.DerivedKey, opts.Proxy);
+                PRTCookie = Helper.createPRTCookie(opts.PRT, opts.Context, opts.DerivedKey, null, opts.Proxy);
             }
             else if (opts.PRT != null & opts.SessionKey != null)
             {
-                var context = Helper.GetByteArray(24);
+                /**var context = Helper.GetByteArray(24);
                 var decodedKey = Helper.Base64Decode(opts.SessionKey);
                 var derivedKey = Helper.CreateDerivedKey(decodedKey, context);
 
                 var contextHex = Helper.Binary2Hex(context);
                 var derivedSessionKeyHex = Helper.Binary2Hex(derivedKey);
+                **/
 
-                PRTCookie = Helper.createPRTCookie2(opts.PRT, opts.Proxy, opts.SessionKey, opts.useKDFv2);
+                if (!opts.useKDFv1)
+                {
+                    PRTCookie = Helper.createPRTCookieWithKDFv2(opts.PRT, null, null, opts.SessionKey, opts.Proxy);
+                }
+                else
+                {
+                    PRTCookie = Helper.createPRTCookie(opts.PRT, null, null, opts.SessionKey, opts.Proxy);
+                }
             }
             else
             {

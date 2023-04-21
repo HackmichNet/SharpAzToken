@@ -96,8 +96,8 @@ namespace SharpAzToken
         [Option(HelpText = "Use Session Key")]
         public string SessionKey { get; set; }
 
-        [Option(HelpText = "Use KeyDerivationFunction 2", Default = false)]
-        public bool useKDFv2 { get; set; }
+        [Option(HelpText = "Use KeyDerivationFunction 1", Default = false)]
+        public bool useKDFv1 { get; set; }
     }
 
     [Verb("token", HelpText = "Play with Azure tokens using \"/oauth2/token\" endpoint.")]
@@ -144,7 +144,7 @@ namespace SharpAzToken
 
         [Option(HelpText = "Set a client used for token request, you can choose between: Outlook, Substrate, Teams, Graph, MSGraph, Core, Office, Intune, Windows, ComplianceCenter, SharepointOnline or ExchangeOnlineV2. Or you can set custom values with --clientid and --resourceid")]
         public string ClientName { get; set; }
-        [Option(HelpText = "Use KeyDerivationFunction 2", Default = false)]
+        [Option(HelpText = "Use KeyDerivationFunction 2", Default = true)]
         public bool useKDFv2{ get; set; }
     }
 
@@ -192,7 +192,7 @@ namespace SharpAzToken
         [Option(HelpText = "Set a custom scope", Default = ".default offline_access")]
         public string Scope { get; set; }
         
-        [Option(HelpText = "Use KeyDerivationFunction 2", Default = false)]
+        [Option(HelpText = "Use KeyDerivationFunction 2", Default = true)]
         public bool useKDFv2 { get; set; }
     }
 

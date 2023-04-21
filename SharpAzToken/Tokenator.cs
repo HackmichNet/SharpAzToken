@@ -192,7 +192,7 @@ namespace SharpAzToken
         public static string GetTokenFromPRTAndDerivedKey(string PRT, string tenant, string DerivedKey, string Context, string Proxy, string clientID, string payload, bool useAuthV2)
         {
             string result = null;
-            string prtCookie = Helper.createPRTCookie(PRT, Context, DerivedKey, Proxy);
+            string prtCookie = Helper.createPRTCookie(PRT, Context, DerivedKey, null, Proxy);
             if (useAuthV2)
             {
                 string code = Helper.getCodeFromPRTCookieV2(prtCookie, Proxy, payload, clientID);
@@ -214,8 +214,15 @@ namespace SharpAzToken
 
             var contextHex = Helper.Binary2Hex(context);
             var derivedSessionKeyHex = Helper.Binary2Hex(derivedKey);
-
-            string prtCookie = Helper.createPRTCookie2(PRT, Proxy, SessionKey, useKDFv2);
+            string prtCookie;
+            if (useKDFv2)
+            {
+                prtCookie = Helper.createPRTCookieWithKDFv2(PRT, null, null, SessionKey, Proxy);
+            }
+            else
+            {
+                prtCookie = Helper.createPRTCookie(PRT, contextHex, derivedSessionKeyHex, null, Proxy);
+            }
             string code;
             if (useOauthv2)
             {
@@ -257,7 +264,7 @@ namespace SharpAzToken
             {
                 return null;
             }
-            return GetTokenWithCodeV1(code, null, Proxy, clientID, scope);
+            return GetTokenWithCodeV2(code, null, Proxy, clientID, scope);
         }
 
         public static string GetTokenFromDeviceCodeFlow(string ClientID, string ResourceID, string Proxy, bool useOAuthV2)

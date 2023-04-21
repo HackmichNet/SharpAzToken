@@ -146,7 +146,7 @@ namespace SharpAzToken
             return s;
         }
 
-        public static string createPRTCookie2(string prt, string proxy, string sessionkey, bool useKDFv2)
+        public static string createPRTCookieWithKDFv2(string prt, string context, string derived_sessionkey, string sessionkey, string proxy)
         {
             string nonce = getNonce(proxy);
            
@@ -166,26 +166,16 @@ namespace SharpAzToken
                 { "request_nonce", nonce }
             };
 
-            var context = Helper.GetByteArray(24);
+            var contextBytes = Helper.GetByteArray(24);
             Dictionary<string, object> header = null;
-            var derivedContext = context;
-            if (useKDFv2)
+            var derivedContext = contextBytes;
+            header = new Dictionary<string, object>
             {
-                header = new Dictionary<string, object>
-                {
-                    { "ctx", context },
-                    { "kdf_ver", 2 }
+                { "ctx", contextBytes },
+                { "kdf_ver", 2 }
 
-                };
-                derivedContext = GetKDFv2(payload,  context);
-            }
-            else
-            {
-                header = new Dictionary<string, object>
-                {
-                    { "ctx", context }
-                };
-            }
+            };
+            derivedContext = GetKDFv2(payload,  contextBytes);
 
             IJwtAlgorithm algorithm = new HMACSHA256Algorithm(); // symmetric
             IJsonSerializer serializer = new JsonNetSerializer();
@@ -199,13 +189,12 @@ namespace SharpAzToken
             return cookie;
         }
 
-        public static string createPRTCookie(string prt, string context, string derived_sessionkey, string proxy, byte[] contextBytes = null, byte[] sessionKeyBytes = null)
+        public static string createPRTCookie(string prt, string context, string derived_sessionkey, string sessionkey, string proxy)
         {
             
             string nonce = getNonce(proxy);
 
             byte[] data = Base64Decode(prt);
-
             string prtdecoded = Encoding.UTF8.GetString(data);
 
             var payload = new Dictionary<string, object>
@@ -216,36 +205,42 @@ namespace SharpAzToken
             };
 
             Dictionary<string, object> header = null;
+
+            byte[] currentContext;
             if (context != null)
             {
-                header = new Dictionary<string, object>
-                {
-                    { "ctx", Hex2Binary(context) }
-                };
+                currentContext = Hex2Binary(context);
             }
             else
             {
-                header = new Dictionary<string, object>
-                {
-                    { "ctx", contextBytes }
-                };
+                currentContext = Helper.GetByteArray(24);
             }
+
+            header = new Dictionary<string, object>
+            {
+                { "ctx", currentContext }
+            };
+
             IJwtAlgorithm algorithm = new HMACSHA256Algorithm(); // symmetric
             IJsonSerializer serializer = new JsonNetSerializer();
             IBase64UrlEncoder urlEncoder = new JwtBase64UrlEncoder();
             IJwtEncoder encoder = new JwtEncoder(algorithm, serializer, urlEncoder);
 
-            byte[] sdata = null;
-            if (derived_sessionkey != null)
+            if (sessionkey != null)
             {
+                var decodedKey = Helper.Base64Decode(sessionkey);
+                var derivedKey = Helper.CreateDerivedKey(decodedKey, currentContext);
+                var cookie = encoder.Encode(header, payload, derivedKey);
+                return cookie;
+            }
+            else
+            {
+                byte[] sdata = null;
                 string secret = derived_sessionkey.Replace(" ", "");
                 sdata = Hex2Binary(secret);
-            } else
-            {
-                sdata = sessionKeyBytes;
+                var cookie = encoder.Encode(header, payload, sdata);
+                return cookie;
             }
-            var cookie = encoder.Encode(header, payload, sdata);
-            return cookie;
         }
 
 
