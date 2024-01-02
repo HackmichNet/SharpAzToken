@@ -9,6 +9,8 @@ namespace SharpAzToken
     {
         [Option(HelpText = "Set Proxy")]
         public string Proxy { get; set; }
+        [Option(HelpText = "Choose a Useragent", Default = UserAgentEnums.Edge)]
+        public UserAgentEnums UserAgent { get; set; }
     }
 
     [Verb("devicekeys", HelpText = "Play with Device Keys - Get a PRT and a SessionKey for a certificate.")]

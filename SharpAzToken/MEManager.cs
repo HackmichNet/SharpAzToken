@@ -10,9 +10,9 @@ namespace SharpAzToken
 {
     class MEManager
     {
-        public static DeviceEnrollmentResp addNewDeviceToAzure(string proxy, string accesstoken, string certificaterequest, string transportKey, string targetDomain, string deviceDisplayName, bool registerDevice)
+        public static DeviceEnrollmentResp addNewDeviceToAzure(string proxy, string accesstoken, string certificaterequest, string transportKey, string targetDomain, string deviceDisplayName, bool registerDevice, UserAgentEnums userAgent)
         {
-            using (var client = Helper.getDefaultClient(proxy, false, "https://enterpriseregistration.windows.net"))
+            using (var client = Helper.getDefaultClient(proxy, false, userAgent, "https://enterpriseregistration.windows.net"))
             using (var message = new HttpRequestMessage(HttpMethod.Post, "/EnrollmentServer/device/?api-version=1.0"))
             {
                 //message.Headers.Add("Authorization", "Bearer " + accesstoken);

@@ -4,11 +4,13 @@ using JWT.Serializers;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -73,7 +75,7 @@ namespace SharpAzToken
             }
         }
 
-        public static HttpClient getDefaultClient(String proxy = null, bool useCookies = true, String baseAdress = "https://login.microsoftonline.com")
+        public static HttpClient getDefaultClient(String proxy = null, bool useCookies = true, UserAgentEnums userAgent = UserAgentEnums.Edge, String baseAdress = "https://login.microsoftonline.com")
         {
             HttpClientHandler handler = new HttpClientHandler();
             if (proxy != null)
@@ -95,7 +97,8 @@ namespace SharpAzToken
             client.BaseAddress = new Uri(baseAdress);
             client.DefaultRequestHeaders.Clear();
             //client.DefaultRequestHeaders.Add("UA-CPU", "AMD64");
-            client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 10.0; Win64; x64; Trident/7.0; .NET4.0C; .NET4.0E)");
+            string usedUserAgent = GetEnumDescription((UserAgentEnums)userAgent);
+            client.DefaultRequestHeaders.Add("User-Agent", usedUserAgent);
             return client;
 
         }
@@ -274,10 +277,10 @@ namespace SharpAzToken
         }
 
 
-        private static string PostTo(string uri, FormUrlEncodedContent formContent, string proxy)
+        private static string PostTo(string uri, FormUrlEncodedContent formContent, string proxy, UserAgentEnums userAgent)
         {
             using (var message = new HttpRequestMessage(HttpMethod.Post, uri))
-            using (var client = Helper.getDefaultClient(proxy, false))
+            using (var client = Helper.getDefaultClient(proxy, false, userAgent))
             {
                 //message.Headers.Add("client-request-id", Guid.NewGuid().ToString());
                 //message.Headers.Add("return-client-request-id", "true");
@@ -288,21 +291,21 @@ namespace SharpAzToken
             }
         }
 
-        private static string GetFrom(string uri, string proxy)
+        private static string GetFrom(string uri, string proxy, UserAgentEnums userAgent)
         {
             using (var message = new HttpRequestMessage(HttpMethod.Get, uri))
-            using (var client = Helper.getDefaultClient(proxy, false))
+            using (var client = Helper.getDefaultClient(proxy, false, userAgent))
             {
                 var response = client.SendAsync(message).Result;
                 return response.Content.ReadAsStringAsync().Result;
             }
         }
 
-        public static int PatchRequest(string uri, string accesstoken, string proxy)
+        public static int PatchRequest(string uri, string accesstoken, string proxy, UserAgentEnums userAgent = UserAgentEnums.Edge)
         {
             using(var content = new StringContent("{}", Encoding.UTF8, "application/json"))
             using (var message = new HttpRequestMessage(HttpMethod.Patch, uri))
-            using (var client = Helper.getDefaultClient(proxy, false, "https://graph.windows.net"))
+            using (var client = Helper.getDefaultClient(proxy, false, userAgent, "https://graph.windows.net"))
             {
                 message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accesstoken);
                 message.Content = content;
@@ -314,10 +317,10 @@ namespace SharpAzToken
         public static string GetOpenIDConfiguration(string domain, string proxy)
         {
             string uri = "/" + domain + "/.well-known/openid-configuration";
-            return GetFrom(uri,proxy);
+            return GetFrom(uri,proxy, UserAgentEnums.Edge);
         }
 
-        public static string PostToDeviceCodeEndpoint(FormUrlEncodedContent formContent, string proxy, bool useOAuthV2)
+        public static string PostToDeviceCodeEndpoint(FormUrlEncodedContent formContent, string proxy, bool useOAuthV2, UserAgentEnums userAgent = UserAgentEnums.Edge)
         {
             string uri = null;
             if (useOAuthV2)
@@ -328,30 +331,30 @@ namespace SharpAzToken
             {
                 uri = "/common/oauth2/devicecode";
             }
-            return PostTo(uri, formContent, proxy);
+            return PostTo(uri, formContent, proxy, userAgent);
         }
 
-        public static string PostToTokenV2Endpoint(FormUrlEncodedContent formContent, string proxy, string tenant = null)
+        public static string PostToTokenV2Endpoint(FormUrlEncodedContent formContent, string proxy, string tenant = null, UserAgentEnums userAgent = UserAgentEnums.Edge)
         {
             string uri = "/organizations/oauth2/v2.0/token";
             if (tenant != null)
             {
                 uri = "/" + tenant + "/oauth2/v2.0/token";
             }
-            return PostTo(uri, formContent, proxy);
+            return PostTo(uri, formContent, proxy, userAgent);
         }
 
-        public static string PostToTokenEndpoint(FormUrlEncodedContent formContent, string proxy, string tenant = null)
+        public static string PostToTokenEndpoint(FormUrlEncodedContent formContent, string proxy, string tenant = null, UserAgentEnums userAgent = UserAgentEnums.Edge)
         {
             string uri = "/common/oauth2/token";
             if (tenant != null)
             {
                 uri = "/" + tenant + "/oauth2/token";
             }
-            return PostTo(uri, formContent, proxy);
+            return PostTo(uri, formContent, proxy, userAgent);
         }
 
-        public static string GetNonce2(string proxy)
+        public static string GetNonce2(string proxy, UserAgentEnums userAgent = UserAgentEnums.Edge)
         {
             var formContent = new FormUrlEncodedContent(new[]
                 {
@@ -441,6 +444,18 @@ namespace SharpAzToken
             Array.Copy(context, 0, buffer, 0, context.Length);
             Array.Copy(encodedJSON, 0, buffer, context.Length, encodedJSON.Length);
             return SHA256.ComputeHash(buffer);
+        }
+
+        // Credits to https://stackoverflow.com/questions/2650080/how-to-get-c-sharp-enum-description-from-value
+        public static string GetEnumDescription(Enum value)
+        {
+            FieldInfo fi = value.GetType().GetField(value.ToString());
+            DescriptionAttribute[] attributes = fi.GetCustomAttributes(typeof(DescriptionAttribute), false) as DescriptionAttribute[];
+            if (attributes != null && attributes.Any())
+            {
+                return attributes.First().Description;
+            }
+            return value.ToString();
         }
     }
 }

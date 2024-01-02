@@ -262,7 +262,7 @@ namespace SharpAzToken
             var decoder = new JwtDecoder(serializer, urlEncoder);
             if (opts.RefreshToken != null)
             {
-                string initToken = Tokenator.GetTokenFromRefreshTokenV1(opts.RefreshToken, opts.Tenant, opts.Proxy, AzClientIDEnum.AzureMDM, AzResourceEnum.AzureMDM);
+                string initToken = Tokenator.GetTokenFromRefreshTokenV1(opts.RefreshToken, opts.Tenant, opts.Proxy, AzClientIDEnum.AzureMDM, AzResourceEnum.AzureMDM, opts.UserAgent);
                 string checkAccessToken = JToken.Parse(initToken)["access_token"].ToString();
                 string decodedaccesstoken = decoder.Decode(checkAccessToken);
                 JToken parsedAccessToken = JToken.Parse(decodedaccesstoken);
@@ -277,7 +277,7 @@ namespace SharpAzToken
             }
             else if (opts.UserName != null && opts.Password != null)
             {
-                String initTokens = Tokenator.GetTokenFromUsernameAndPasswordV1(opts.UserName, opts.Password, opts.Proxy, AzClientIDEnum.AzureMDM, AzResourceEnum.AzureMDM, opts.Tenant);
+                String initTokens = Tokenator.GetTokenFromUsernameAndPasswordV1(opts.UserName, opts.Password, opts.Proxy, AzClientIDEnum.AzureMDM, AzResourceEnum.AzureMDM, opts.Tenant, opts.UserAgent);
                 if (initTokens == null)
                 {
                     Console.WriteLine("[-] Authentication failed. Please check used credentials!");
@@ -418,7 +418,7 @@ namespace SharpAzToken
                     }
                     else
                     {
-                        String token = Tokenator.GetTokenFromUsernameAndPasswordV1(opts.UserName, opts.Password, opts.Proxy, AzClientIDEnum.GraphAPI, AzResourceEnum.WindowsClient, opts.Tenant);
+                        String token = Tokenator.GetTokenFromUsernameAndPasswordV1(opts.UserName, opts.Password, opts.Proxy, AzClientIDEnum.GraphAPI, AzResourceEnum.WindowsClient, opts.Tenant, opts.UserAgent);
                         if (token == null)
                         {
                             Console.WriteLine("[-] Authentication failed! ");
@@ -451,7 +451,7 @@ namespace SharpAzToken
                         CertificateRequest req = new System.Security.Cryptography.X509Certificates.CertificateRequest(CN, rsa, System.Security.Cryptography.HashAlgorithmName.SHA256, System.Security.Cryptography.RSASignaturePadding.Pkcs1);
                         var crs = Convert.ToBase64String(req.CreateSigningRequest());
                         var transportKey = Convert.ToBase64String(rsa.Key.Export(CngKeyBlobFormat.GenericPublicBlob));
-                        var responseJoinDevice = MEManager.addNewDeviceToAzure(opts.Proxy, accesstoken, crs, transportKey, upn.Split("@")[1], opts.DeviceName, opts.RegisterDevice);
+                        var responseJoinDevice = MEManager.addNewDeviceToAzure(opts.Proxy, accesstoken, crs, transportKey, upn.Split("@")[1], opts.DeviceName, opts.RegisterDevice, opts.UserAgent);
                         byte[] binCert = Convert.FromBase64String(responseJoinDevice.Certificate.RawBody.ToString());
                         X509Certificate2 cert = new X509Certificate2(binCert, "", X509KeyStorageFlags.UserKeySet | X509KeyStorageFlags.Exportable);
 
@@ -535,7 +535,7 @@ namespace SharpAzToken
                 if (type == typeof(String))
                 {
                     //Console.WriteLine(info.GetValue(null).ToString());
-                    String result = Tokenator.GetTokenWithRefreshTokenV2(opts.RefreshToken, opts.Proxy, opts.Scope, info.GetValue(null).ToString(), opts.Tenant, null);
+                    String result = Tokenator.GetTokenWithRefreshTokenV2(opts.RefreshToken, opts.Proxy, opts.Scope, info.GetValue(null).ToString(), opts.Tenant, opts.UserAgent, null);
                     if (result != null)
                     {
                         var serializer = new JsonNetSerializer();
